@@ -1,0 +1,4 @@
+dag:
+  - task1.sh
+  - [task2a.sh, task2b.sh]
+  - task3.sh
