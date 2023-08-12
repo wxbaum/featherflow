@@ -1,8 +1,8 @@
 #!/bin/bash
-sh ./task1.sh
+sh ./tasks/task1.sh
 wait
-sh ./task2a.sh &
-sh ./task2b.sh &
+sh ./tasks/task2a.sh &
+sh ./tasks/task2b.sh &
 wait
-sh ./task3.sh
+sh ./tasks/task3.sh
 wait
