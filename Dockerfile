@@ -8,7 +8,9 @@ COPY dag.yaml /app/dag.yaml
 COPY generate_bash.py /app/generate_bash.py
 COPY requirements.txt /app/requirements.txt
 
-# Copy task scripts (assuming they are in a folder named 'tasks' on your host machine)
+# Copy startup, config, and task files into /app 
+COPY config/* /app/
+COPY startup/* /app/
 COPY tasks/* /app/
 
 # Set work directory
@@ -18,11 +20,10 @@ WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Generate bash script from DAG
-RUN python generate_bash.py
+RUN python startup/generate_executor_bash_script.py
 
 # Grant execute permission to the generated script and all task scripts
-RUN chmod +x dag_execution.sh
-RUN chmod +x *.sh
+RUN chmod +x dag_executor.sh
 
 # Set up cron job, e.g., to run every hour
 RUN echo "* * * * * /app/dag_execution.sh" | crontab -
