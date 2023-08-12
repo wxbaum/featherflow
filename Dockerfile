@@ -26,7 +26,7 @@ RUN python startup/generate_executor_bash_script.py
 RUN chmod +x dag_executor.sh
 
 # Set up cron job, e.g., to run every hour
-RUN echo "* * * * * /app/dag_execution.sh" | crontab -
+RUN echo "* * * * * /app/dag_executor.sh" | crontab -
 
 # Run cron in foreground
 CMD ["cron", "-f"]
