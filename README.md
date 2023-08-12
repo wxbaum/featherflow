@@ -10,19 +10,19 @@ If you're looking for a highly scalable solution with rich features, [Airflow](h
 
 ## Project Structure
 .
-├── Dockerfile
-├── README.md
-├── dag.yaml
-├── dag_executor.sh
-├── generate_executor_bash_script.py
-├── requirements.txt
-├── config
-│   └── supported_commands.yaml
-└── tasks
-    ├── task1.sh
-    ├── task2a.sh
-    ├── task2b.sh
-    └── task3.sh
+ * [Dockerfile](./Dockerfile)
+ * [README.md](./README.md)
+ * [dag.yaml](./dag.yaml)
+ * [dag_executor.sh](./dag_executor.sh)
+ * [generate_executor_bash_script.py](./generate_executor_bash_script.py)
+ * [requirements.txt](./requirements.txt)
+ * [config](./config)
+   * [supported_commands.yaml](./config/supported_commands.yaml)
+ * [tasks](./tasks)
+   * [task1.sh](./tasks/task1.sh)
+   * [task2a.sh](./tasks/task2a.sh)
+   * [task2b.sh](./tasks/task2b.sh)
+   * [task3.sh](./tasks/task3.sh)
 
 ## Setup & Installation
 docker build -t featherflow .
