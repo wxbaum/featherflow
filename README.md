@@ -8,9 +8,7 @@ If you're not familiar with DAGs, Astronomer has a good [introduction](https://w
 
 If you're looking for a highly scalable solution with rich features, [Airflow](https://airflow.apache.org/) is a better option. If you only need a basic tool, or one without the same RAM and CPU overhead, keep reading. 
 
-$ ./tree-md .
 ## Project Structure
-.
  * [Dockerfile](./Dockerfile)
  * [README.md](./README.md)
  * [dag.yaml](./dag.yaml)
