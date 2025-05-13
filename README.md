@@ -1,6 +1,6 @@
-# MiniFlow
+# Featherflow
 
-A ultra-lightweight workflow orchestration tool built with Python's standard library. MiniFlow is designed to be a simple alternative to Apache Airflow for smaller projects or when you need a lightweight solution without the infrastructure overhead.
+A ultra-lightweight workflow orchestration tool built with Python's standard library. Featherflow is designed to be a simple alternative to Apache Airflow for smaller projects or when you need a lightweight solution without the infrastructure overhead.
 
 ## Features
 
@@ -14,12 +14,12 @@ A ultra-lightweight workflow orchestration tool built with Python's standard lib
 
 ```bash
 # Install from source
-git clone https://github.com/yourusername/miniflow.git
-cd miniflow
+git clone https://github.com/yourusername/featherflow.git
+cd featherflow
 pip install .
 
 # Or directly from PyPI (when published)
-# pip install miniflow
+# pip install featherflow
 ```
 
 ## Quick Start
@@ -31,7 +31,7 @@ Create a JSON file that defines your workflow:
 ```json
 {
   "name": "sample_flow",
-  "description": "A sample flow to demonstrate MiniFlow",
+  "description": "A sample flow to demonstrate Featherflow",
   "tasks": [
     {
       "id": "fetch_data",
@@ -73,25 +73,25 @@ sys.exit(0)
 
 ### 3. Run Your Flow
 
-Use the MiniFlow CLI to execute your workflow:
+Use the Featherflow CLI to execute your workflow:
 
 ```bash
 # List available flows
-miniflow list
+featherflow list
 
 # Run a flow
-miniflow run sample_flow
+featherflow run sample_flow
 
 # Run with parameters
-miniflow run sample_flow --params '{"date": "2023-01-01", "source": "example"}'
+featherflow run sample_flow --params '{"date": "2023-01-01", "source": "example"}'
 
 # Generate script without executing (dry run)
-miniflow run sample_flow --dry-run
+featherflow run sample_flow --dry-run
 ```
 
 ## Flow Definition Reference
 
-A MiniFlow flow is defined in a JSON file with the following structure:
+A Featherflow flow is defined in a JSON file with the following structure:
 
 ```json
 {
@@ -132,14 +132,14 @@ A MiniFlow flow is defined in a JSON file with the following structure:
 ## CLI Reference
 
 ```
-miniflow --flows-dir FLOWS_DIR --tasks-dir TASKS_DIR [command] [options]
+featherflow --flows-dir FLOWS_DIR --tasks-dir TASKS_DIR [command] [options]
 ```
 
 ### Global Options
 
 - `--flows-dir`, `-f`: Directory containing flow JSON files (default: ./flows)
 - `--tasks-dir`, `-t`: Directory containing task scripts (default: ./tasks)
-- `--output-dir`, `-o`: Directory for generated bash scripts and logs (default: ./miniflow_output)
+- `--output-dir`, `-o`: Directory for generated bash scripts and logs (default: ./featherflow_output)
 - `--log-level`, `-l`: Logging level (default: INFO)
 
 ### Commands
@@ -147,7 +147,7 @@ miniflow --flows-dir FLOWS_DIR --tasks-dir TASKS_DIR [command] [options]
 #### List Flows
 
 ```
-miniflow list
+featherflow list
 ```
 
 Lists all available flows in the flows directory.
@@ -155,7 +155,7 @@ Lists all available flows in the flows directory.
 #### Run Flow
 
 ```
-miniflow run FLOW_NAME [options]
+featherflow run FLOW_NAME [options]
 ```
 
 Executes the specified flow.
@@ -166,24 +166,24 @@ Options:
 
 ## Python API
 
-You can also use MiniFlow programmatically in your Python code:
+You can also use Featherflow programmatically in your Python code:
 
 ```python
-from miniflow import MiniFlow
+from featherflow import Featherflow
 
-# Initialize MiniFlow
-miniflow = MiniFlow(
+# Initialize Featherflow
+featherflow = Featherflow(
     flows_dir="./flows",
     tasks_dir="./tasks",
-    output_dir="./miniflow_output"
+    output_dir="./featherflow_output"
 )
 
 # List available flows
-flows = miniflow.list_flows()
+flows = featherflow.list_flows()
 print(f"Available flows: {flows}")
 
 # Execute a flow
-script_path = miniflow.execute_flow(
+script_path = featherflow.execute_flow(
     "sample_flow",
     params={"date": "2023-01-01"},
     dry_run=False
