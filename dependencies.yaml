@@ -1,9 +1,0 @@
-tasks:
-  process_data:
-    dependencies: []
-  train_model:
-    dependencies: [process_data]
-  evaluate_model:
-    dependencies: [train_model]
-  generate_report:
-    dependencies: [evaluate_model, process_data]
