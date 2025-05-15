@@ -1,140 +1,64 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-Core Featherflow implementation
+Core functionality for Featherflow
 """
-import json
 import os
+import json
 import logging
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Optional, Union
-
-from .parser import parse_flow
-from .executor import generate_bash_script
-
-logger = logging.getLogger(__name__)
+from . import executor
+from . import parser
+from . import utils
 
 class Featherflow:
-    """
-    Main Featherflow class for orchestrating lightweight workflows
-    """
-    def __init__(
-        self, 
-        flows_dir: str, 
-        tasks_dir: str,
-        output_dir: Optional[str] = None,
-        log_level: str = "INFO"
-    ):
-        """
-        Initialize Featherflow
+    """Main class for Featherflow workflow orchestration"""
+    def __init__(self, flows_dir="./flows", tasks_dir="./tasks", output_dir="./featherflow_output", log_level=None):
+        """Initialize Featherflow"""
+        self.flows_dir = flows_dir
+        self.tasks_dir = tasks_dir
+        self.output_dir = output_dir
+        self.logger = logging.getLogger(__name__)
         
-        Args:
-            flows_dir: Directory containing flow JSON files
-            tasks_dir: Directory containing Python task scripts
-            output_dir: Directory for generated bash scripts and logs (default: ./featherflow_output)
-            log_level: Logging level (default: INFO)
-        """
-        self.flows_dir = Path(flows_dir)
-        self.tasks_dir = Path(tasks_dir)
-        self.output_dir = Path(output_dir) if output_dir else Path("./featherflow_output")
-        
-        # Create output directory if it doesn't exist
-        os.makedirs(self.output_dir, exist_ok=True)
-        
-        # Set up logging
-        logging.basicConfig(
-            level=getattr(logging, log_level),
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler(self.output_dir / "featherflow.log")
-            ]
-        )
-        
-        logger.info(f"Featherflow initialized with flows_dir={flows_dir}, tasks_dir={tasks_dir}")
-        
-        # Validate directories
-        if not self.flows_dir.exists():
-            raise ValueError(f"Flows directory does not exist: {flows_dir}")
-        if not self.tasks_dir.exists():
-            raise ValueError(f"Tasks directory does not exist: {tasks_dir}")
-    
-    def list_flows(self) -> List[str]:
-        """List all available flow files"""
-        return [f.name for f in self.flows_dir.glob("*.json")]
-    
-    def load_flow(self, flow_name: str) -> Dict:
-        """
-        Load a flow from a JSON file
-        
-        Args:
-            flow_name: Name of the flow file (with or without .json extension)
-        
-        Returns:
-            Flow definition as a dictionary
-        """
-        # Add .json extension if not present
-        if not flow_name.endswith(".json"):
-            flow_name = f"{flow_name}.json"
+        # Set log level if provided
+        if log_level:
+            self.logger.setLevel(getattr(logging, log_level.upper()))
             
-        flow_path = self.flows_dir / flow_name
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
         
-        if not flow_path.exists():
-            raise ValueError(f"Flow file does not exist: {flow_path}")
+    def list_flows(self):
+        """List all available flows in the flows directory"""
+        self.logger.info(f"Listing flows in {self.flows_dir}")
+        flows = []
+        if os.path.exists(self.flows_dir):
+            for file in os.listdir(self.flows_dir):
+                if file.endswith(".json"):
+                    flows.append(file.replace(".json", ""))
+        return flows
         
+    def execute_flow(self, flow_name, params=None, dry_run=False):
+        """Execute a flow with the given name"""
+        self.logger.info(f"Executing flow {flow_name}")
+        # Load flow definition
+        flow_path = os.path.join(self.flows_dir, f"{flow_name}.json")
+        if not os.path.exists(flow_path):
+            self.logger.error(f"Flow definition not found: {flow_path}")
+            raise FileNotFoundError(f"Flow definition not found: {flow_path}")
+            
         with open(flow_path, "r") as f:
             flow_def = json.load(f)
             
-        logger.info(f"Loaded flow: {flow_name}")
-        return flow_def
-    
-    def execute_flow(
-        self, 
-        flow_name: str,
-        params: Optional[Dict] = None,
-        dry_run: bool = False
-    ) -> str:
-        """
-        Execute a flow by generating and running a bash script
-        
-        Args:
-            flow_name: Name of the flow to execute
-            params: Parameters to pass to the flow (optional)
-            dry_run: If True, generate the script but don't execute it
-            
-        Returns:
-            Path to the generated bash script
-        """
-        # Load and parse the flow
-        flow_def = self.load_flow(flow_name)
-        parsed_flow = parse_flow(flow_def)
-        
-        # Generate timestamp for the run
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        script_name = f"{flow_name.replace('.json', '')}_{timestamp}.sh"
-        script_path = self.output_dir / script_name
+        # Parse flow definition
+        flow = parser.parse_flow(flow_def, params or {})
         
         # Generate bash script
-        script_content = generate_bash_script(
-            parsed_flow, 
+        script_path = executor.generate_script(
+            flow,
             self.tasks_dir,
-            params=params
+            self.output_dir
         )
         
-        # Write bash script to file
-        with open(script_path, "w") as f:
-            f.write(script_content)
-        
-        # Make script executable
-        os.chmod(script_path, 0o755)
-        
-        logger.info(f"Generated bash script: {script_path}")
-        
+        # Execute the script unless dry_run is True
         if not dry_run:
-            # Execute the script
-            logger.info(f"Executing flow: {flow_name}")
-            os.system(f"bash {script_path}")
-            logger.info(f"Completed flow: {flow_name}")
-        else:
-            logger.info(f"Dry run - script not executed: {script_path}")
-        
-        return str(script_path)
+            executor.execute_script(script_path)
+        return script_path

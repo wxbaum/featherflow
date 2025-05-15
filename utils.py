@@ -1,101 +1,98 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 Utility functions for Featherflow
 """
+
 import os
-import json
 import logging
-from pathlib import Path
-from typing import Dict, Any, Optional
 
-logger = logging.getLogger(__name__)
-
-def load_json_file(file_path: str) -> Dict:
+def validate_path(path, create=False, is_dir=False):
     """
-    Load and parse a JSON file
+    Validate that a path exists and is accessible
     
     Args:
-        file_path: Path to the JSON file
+        path (str): Path to validate
+        create (bool): Whether to create the path if it doesn't exist
+        is_dir (bool): Whether the path should be a directory
         
     Returns:
-        Parsed JSON as a dictionary
+        bool: True if the path is valid, False otherwise
     """
-    try:
-        with open(file_path, 'r') as f:
-            return json.load(f)
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in {file_path}: {e}")
-        raise ValueError(f"Invalid JSON in {file_path}: {e}")
-    except FileNotFoundError:
-        logger.error(f"File not found: {file_path}")
-        raise FileNotFoundError(f"File not found: {file_path}")
+    logger = logging.getLogger(__name__)
+    
+    if os.path.exists(path):
+        if is_dir and not os.path.isdir(path):
+            logger.error(f"Path exists but is not a directory: {path}")
+            return False
+        elif not is_dir and not os.path.isfile(path):
+            logger.error(f"Path exists but is not a file: {path}")
+            return False
+        
+        return True
+    elif create:
+        try:
+            if is_dir:
+                os.makedirs(path, exist_ok=True)
+                logger.info(f"Created directory: {path}")
+            else:
+                # Create parent directory if needed
+                parent_dir = os.path.dirname(path)
+                if parent_dir and not os.path.exists(parent_dir):
+                    os.makedirs(parent_dir, exist_ok=True)
+                    logger.info(f"Created parent directory: {parent_dir}")
+                
+                # Create empty file
+                with open(path, "w") as f:
+                    pass
+                logger.info(f"Created file: {path}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create path {path}: {str(e)}")
+            return False
+    else:
+        logger.error(f"Path does not exist: {path}")
+        return False
 
-def save_json_file(data: Dict, file_path: str) -> None:
+def get_file_contents(file_path):
     """
-    Save data to a JSON file
+    Read the contents of a file
     
     Args:
-        data: Data to save
-        file_path: Path to save the JSON file
+        file_path (str): Path to the file
+        
+    Returns:
+        str: Contents of the file, or None if the file doesn't exist
+    """
+    if not os.path.exists(file_path):
+        return None
+    
+    with open(file_path, "r") as f:
+        return f.read()
+
+def write_file_contents(file_path, contents):
+    """
+    Write contents to a file
+    
+    Args:
+        file_path (str): Path to the file
+        contents (str): Contents to write
+        
+    Returns:
+        bool: True if successful, False otherwise
     """
     try:
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=2)
+        # Create parent directory if needed
+        parent_dir = os.path.dirname(file_path)
+        if parent_dir and not os.path.exists(parent_dir):
+            os.makedirs(parent_dir, exist_ok=True)
+        
+        with open(file_path, "w") as f:
+            f.write(contents)
+        
+        return True
     except Exception as e:
-        logger.error(f"Error saving JSON to {file_path}: {e}")
-        raise
-
-def get_task_full_path(task_name: str, tasks_dir: str) -> str:
-    """
-    Get the full path to a task script
-    
-    Args:
-        task_name: Name of the task script (with or without extension)
-        tasks_dir: Directory containing task scripts
-        
-    Returns:
-        Full path to the task script
-    """
-    tasks_dir_path = Path(tasks_dir)
-    
-    # Check if task_name already has an extension
-    if '.' in task_name:
-        task_path = tasks_dir_path / task_name
-        if task_path.exists():
-            return str(task_path)
-    
-    # Try with .py extension
-    task_path = tasks_dir_path / f"{task_name}.py"
-    if task_path.exists():
-        return str(task_path)
-    
-    # Try with .sh extension
-    task_path = tasks_dir_path / f"{task_name}.sh"
-    if task_path.exists():
-        return str(task_path)
-    
-    # If not found, return original path which will cause an error later
-    logger.warning(f"Task script not found: {task_name}")
-    return str(tasks_dir_path / task_name)
-
-def get_env_var(name: str, default: Optional[Any] = None) -> Any:
-    """
-    Get an environment variable, with optional JSON parsing
-    
-    Args:
-        name: Name of the environment variable
-        default: Default value if not found
-        
-    Returns:
-        Value of the environment variable, parsed as JSON if applicable
-    """
-    value = os.environ.get(name)
-    
-    if value is None:
-        return default
-    
-    # Try to parse as JSON
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        # Return as string if not valid JSON
-        return value
+        logger.error(f"Failed to write to file {file_path}: {str(e)}")
+        return False

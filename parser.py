@@ -1,123 +1,84 @@
-"""
-Flow parser module for Featherflow
-"""
-import json
-from typing import Dict, List, Any, Set, Tuple
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-def parse_flow(flow_def: Dict) -> Dict:
+"""
+Parser functionality for Featherflow
+"""
+
+import logging
+
+def parse_flow(flow_def, params=None):
     """
-    Parse and validate a flow definition
+    Parse a flow definition and apply parameters
     
     Args:
-        flow_def: Flow definition dictionary from JSON
+        flow_def (dict): Flow definition loaded from JSON
+        params (dict): Optional parameters to apply to the flow definition
         
     Returns:
-        Validated and processed flow definition
+        dict: Parsed flow definition with parameters applied
     """
-    # Validate required fields
-    required_fields = ["name", "tasks"]
-    for field in required_fields:
-        if field not in flow_def:
-            raise ValueError(f"Flow definition missing required field: {field}")
+    logger = logging.getLogger(__name__)
+    logger.info(f"Parsing flow: {flow_def.get('name', 'unnamed')}")
     
-    # Validate tasks
-    if not isinstance(flow_def["tasks"], list) or not flow_def["tasks"]:
-        raise ValueError("Flow must contain at least one task")
+    # Apply parameters to the flow definition
+    if params:
+        logger.info(f"Applying parameters: {params}")
+        flow_def = apply_params(flow_def, params)
     
-    # Check for task IDs and dependencies
-    task_ids = set()
-    for task in flow_def["tasks"]:
-        if "id" not in task:
-            raise ValueError("Each task must have an ID")
-        if "script" not in task:
-            raise ValueError(f"Task {task['id']} missing 'script' field")
-        
-        task_ids.add(task["id"])
-    
-    # Validate dependencies
-    for task in flow_def["tasks"]:
-        if "depends_on" in task:
-            if not isinstance(task["depends_on"], list):
-                task["depends_on"] = [task["depends_on"]]
-                
-            for dep in task["depends_on"]:
-                if dep not in task_ids:
-                    raise ValueError(f"Task {task['id']} depends on non-existent task {dep}")
-    
-    # Check for cycles in the dependency graph
-    check_for_cycles(flow_def["tasks"])
+    # Validate the flow definition
+    validate_flow(flow_def)
     
     return flow_def
 
-def check_for_cycles(tasks: List[Dict]) -> None:
+def apply_params(flow_def, params):
     """
-    Check for cycles in the task dependency graph
+    Apply parameters to a flow definition
     
     Args:
-        tasks: List of task dictionaries
-        
-    Raises:
-        ValueError: If a cycle is detected
-    """
-    # Build dependency graph
-    graph = {task["id"]: task.get("depends_on", []) for task in tasks}
-    
-    # Detect cycles using DFS
-    visited = set()
-    rec_stack = set()
-    
-    def dfs(node):
-        visited.add(node)
-        rec_stack.add(node)
-        
-        for neighbor in graph[node]:
-            if neighbor not in visited:
-                if dfs(neighbor):
-                    return True
-            elif neighbor in rec_stack:
-                raise ValueError(f"Cycle detected in task dependencies involving {node} and {neighbor}")
-        
-        rec_stack.remove(node)
-        return False
-    
-    # Run DFS from each unvisited node
-    for node in graph:
-        if node not in visited:
-            dfs(node)
-
-def get_execution_order(tasks: List[Dict]) -> List[str]:
-    """
-    Determine the execution order for tasks based on dependencies
-    
-    Args:
-        tasks: List of task dictionaries
+        flow_def (dict): Flow definition
+        params (dict): Parameters to apply
         
     Returns:
-        List of task IDs in execution order
+        dict: Flow definition with parameters applied
     """
-    # Build dependency graph
-    graph = {task["id"]: task.get("depends_on", []) for task in tasks}
+    # Make a copy of the flow definition to avoid modifying the original
+    import copy
+    flow_def = copy.deepcopy(flow_def)
     
-    # Topological sort
-    visited = set()
-    temp_visited = set()
-    order = []
+    # TODO: Implement parameter substitution logic
+    # This could involve replacing placeholders in the flow definition
+    # with values from the params dict
     
-    def visit(node):
-        if node in temp_visited:
-            raise ValueError(f"Cycle detected in task dependencies involving {node}")
-        if node not in visited:
-            temp_visited.add(node)
-            for dep in graph[node]:
-                visit(dep)
-            temp_visited.remove(node)
-            visited.add(node)
-            order.append(node)
+    return flow_def
+
+def validate_flow(flow_def):
+    """
+    Validate that a flow definition is well-formed
     
-    # Visit all nodes
-    for node in graph:
-        if node not in visited:
-            visit(node)
+    Args:
+        flow_def (dict): Flow definition to validate
+        
+    Raises:
+        ValueError: If the flow definition is invalid
+    """
+    logger = logging.getLogger(__name__)
     
-    # Reverse to get correct order
-    return list(reversed(order))
+    # Check required fields
+    if "name" not in flow_def:
+        logger.error("Flow definition missing required field: name")
+        raise ValueError("Flow definition missing required field: name")
+    
+    if "tasks" not in flow_def or not isinstance(flow_def["tasks"], list):
+        logger.error("Flow definition must contain a list of tasks")
+        raise ValueError("Flow definition must contain a list of tasks")
+    
+    # Check that all tasks have required fields
+    for i, task in enumerate(flow_def["tasks"]):
+        if "id" not in task:
+            logger.error(f"Task {i} is missing required field: id")
+            raise ValueError(f"Task {i} is missing required field: id")
+        
+        if "script" not in task:
+            logger.error(f"Task {task['id']} is missing required field: script")
+            raise ValueError(f"Task {task['id']} is missing required field: script")
