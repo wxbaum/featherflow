@@ -9,6 +9,7 @@ import os
 import subprocess
 import logging
 import datetime
+import shutil
 from . import utils
 
 def generate_script(flow, tasks_dir, output_dir):
@@ -37,6 +38,48 @@ def generate_script(flow, tasks_dir, output_dir):
     
     # Generate script content
     script_content = generate_script_content(flow, task_order, tasks_dir)
+    
+    # CRITICAL FIX: Directly modify the script content to ensure TEMP_DIR is defined
+    # This is a more direct approach to ensure the variable is defined regardless of template
+    if "TEMP_DIR=" not in script_content:
+        # Add TEMP_DIR definition after the shebang and before the rest of the script
+        temp_dir_def = """
+# Create absolute path for temp directory
+TEMP_DIR="$PWD/tmp"
+echo "Creating temporary directory at: $TEMP_DIR"
+mkdir -p "$TEMP_DIR"
+if [ ! -d "$TEMP_DIR" ]; then
+    echo "Error: Failed to create temporary directory: $TEMP_DIR"
+    exit 1
+fi
+"""
+        script_lines = script_content.split('\n')
+        # Insert after the first line (shebang) and any comment lines at the top
+        insert_index = 1
+        while insert_index < len(script_lines) and (script_lines[insert_index].strip().startswith('#') or not script_lines[insert_index].strip()):
+            insert_index += 1
+        
+        script_lines.insert(insert_index, temp_dir_def)
+        script_content = '\n'.join(script_lines)
+    
+    # Ensure cleanup happens using trap to handle errors and normal exits
+    if "trap" not in script_content:
+        cleanup_trap = """
+# Setup cleanup trap to ensure tmp directory is removed even on errors
+trap 'echo "Cleaning up temporary directory"; rm -rf "$TEMP_DIR"; echo "Cleanup complete"' EXIT
+"""
+        # Insert after TEMP_DIR definition
+        temp_dir_end = script_content.find('fi', script_content.find('TEMP_DIR='))
+        if temp_dir_end > 0:
+            temp_dir_end += 2  # Move past the 'fi'
+            script_content = script_content[:temp_dir_end] + cleanup_trap + script_content[temp_dir_end:]
+    
+    # Remove any existing cleanup code at the end that might be conflicting
+    if "# Clean up temp directory if flow completes successfully" in script_content:
+        cleanup_start = script_content.find("# Clean up temp directory if flow completes successfully")
+        cleanup_end = script_content.find("\necho \"Flow completed successfully", cleanup_start)
+        if cleanup_end > 0:
+            script_content = script_content[:cleanup_start] + script_content[cleanup_end:]
     
     # Write script to file
     with open(script_path, "w") as f:
@@ -151,7 +194,7 @@ def generate_script_content(flow, task_order, tasks_dir):
         with open(template_path, "r") as f:
             template = f.read()
     else:
-        # Fallback to a basic template
+        # Fallback to a basic template with trap for cleanup
         template = """#!/bin/bash
 
 # Featherflow generated script for flow: {flow_name}
@@ -159,8 +202,22 @@ def generate_script_content(flow, task_order, tasks_dir):
 
 set -e  # Exit on any error
 
+# Create absolute path for temp directory
+TEMP_DIR="$PWD/tmp"
+echo "Creating temporary directory at: $TEMP_DIR"
+mkdir -p "$TEMP_DIR"
+if [ ! -d "$TEMP_DIR" ]; then
+    echo "Error: Failed to create temporary directory: $TEMP_DIR"
+    exit 1
+fi
+
+# Setup cleanup trap to ensure tmp directory is removed even on errors
+trap 'echo "Cleaning up temporary directory"; rm -rf "$TEMP_DIR"; echo "Cleanup complete"' EXIT
+
 echo "Starting flow: {flow_name}"
+
 {task_commands}
+
 echo "Flow completed successfully: {flow_name}"
 """
     
@@ -191,7 +248,33 @@ echo "Flow completed successfully: {flow_name}"
                 env_vars += f"{key}={value} "
             command = f"{env_vars}{command}"
         
-        task_commands.append(f"echo 'Running task: {task_id}'\n{command}")
+        # Set TMP_DIR environment variable for all tasks
+        command = f"TMP_DIR=\"$TEMP_DIR\" {command}"
+        
+        # Build the dependency check code
+        dependency_checks = ""
+        if "depends_on" in task and task["depends_on"]:
+            dependency_checks = "# Check dependencies\n"
+            for dep_id in task["depends_on"]:
+                dependency_checks += f"""echo "Checking dependency {dep_id} for task {task_id}"
+while ! [[ -f "$TEMP_DIR/{dep_id}.status" && "$(cat $TEMP_DIR/{dep_id}.status)" == "0" ]]; do
+    echo "Waiting for dependency {dep_id} to complete..."
+    sleep 5
+done
+"""
+        
+        # Complete task command with dependency checks and status reporting
+        task_cmd = f"""echo 'Running task: {task_id}'
+{dependency_checks}{command}
+task_status=$?
+echo "[FEATHERFLOW_STATUS] Task {task_id} completed with status $task_status"
+echo "$task_status" > "$TEMP_DIR/{task_id}.status"
+if [[ $task_status -ne 0 ]]; then
+    echo "Task {task_id} failed with status $task_status"
+    exit $task_status
+fi"""
+        
+        task_commands.append(task_cmd)
     
     # Fill in the template
     script_content = template.format(
