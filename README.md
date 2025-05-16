@@ -2,7 +2,7 @@
 
 An ultra-lightweight workflow orchestration tool built with Python's standard library. Featherflow is designed to be a simple alternative to Apache Airflow for smaller projects or when you need a lightweight solution without the infrastructure overhead. 
 
-As an example, Featherflow will happily run on the smallest EC2 instance AWS offers, t2.nano.  
+As an example, Featherflow will happily run on the smallest EC2 instance AWS offers: t2.nano.  
 
 ## Features
 
