@@ -1,6 +1,6 @@
 # Featherflow
 
-An ultra-lightweight workflow orchestration tool built with Python's standard library. Featherflow is designed to be a simple alternative to Apache Airflow for smaller projects or when you need a lightweight solution without the infrastructure overhead.
+An ultra-lightweight workflow orchestration tool built with Python's standard library. Featherflow is designed to be a simple alternative to Apache Airflow for smaller projects or when you need a lightweight solution without the infrastructure overhead. For example, Featherflow will happily run on a t2.nano EC2 instance.  
 
 ## Features
 
@@ -11,9 +11,7 @@ An ultra-lightweight workflow orchestration tool built with Python's standard li
 - **Command Line Interface**: Easy to use CLI for running and managing workflows
 - **Temp Directory Management**: Automatically creates and cleans up temporary directories
 
-## Why Featherflow?
-
-### The Problem
+## Why I Made Featherflow
 
 Modern workflow orchestration tools like Apache Airflow, Prefect, and Luigi provide powerful features but come with:
 
@@ -23,15 +21,7 @@ Modern workflow orchestration tools like Apache Airflow, Prefect, and Luigi prov
 - Dependency conflicts
 - Overkill for simpler workflow needs
 
-### The Solution
-
-Featherflow takes a minimalist approach:
-
-- **Zero External Dependencies**: Built entirely with Python's standard library
-- **No Database Required**: Workflows run as generated bash scripts
-- **Simple JSON Configuration**: Define your workflows in easy-to-read JSON
-- **Lightweight Installation**: Single package with minimal footprint
-- **Fast to Learn**: Simple concepts that can be picked up in minutes
+I wanted a minimalist approach that could run on the cheapest possible servers and micro computers like Raspberry Pi, so I created Featherflow.
 
 ## Installation
 
@@ -40,7 +30,7 @@ Featherflow takes a minimalist approach:
 pip install featherflow
 
 # Or directly from source
-git clone https://github.com/yourusername/featherflow.git
+git clone https://github.com/wxbaum/featherflow.git
 cd featherflow
 pip install .
 ```
@@ -81,6 +71,7 @@ Create a JSON file that defines your workflow:
   ]
 }
 ```
+Save your flow as <flow_name> in a folder named flows. 
 
 ### 2. Create Task Scripts
 
@@ -118,9 +109,11 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
+Save your tasks in a folder named tasks. The tasks folder should be parallel to flows. 
+
 ### 3. Run Your Flow
 
-Use the Featherflow CLI to execute your workflow:
+From the root folder containing flows and tasks, use the Featherflow CLI to execute your workflow:
 
 ```bash
 # List available flows
@@ -347,18 +340,4 @@ Contributions are welcome! As a lightweight tool, Featherflow aims to remain sim
 
 ## License
 
-MIT License
-
-## Comparison with Other Tools
-
-| Feature | Featherflow | Apache Airflow | Prefect | Luigi |
-|---------|------------|----------------|---------|-------|
-| Dependencies | None (std lib only) | Many | Many | Some |
-| Database | No | Yes | Optional | No |
-| Infrastructure | None | Complex | Moderate | Simple |
-| UI | No | Yes | Yes | Basic |
-| Learning Curve | Low | High | Medium | Medium |
-| Installation Size | < 1 MB | > 100 MB | > 50 MB | > 10 MB |
-| Best For | Simple workflows, script automation | Enterprise ETL, scheduling | Data engineering | Data pipelines |
-
-Featherflow is ideal when you need workflow orchestration without the overhead of larger frameworks.
+GPL-3.0 License
