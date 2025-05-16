@@ -1,0 +1,44 @@
+{
+  "name": "weather_observations_flow",
+  "description": "Collect, aggregate and report weather observations",
+  "tasks": [
+    {
+      "id": "get_lax_obs",
+      "script": "get_observations.py",
+      "args": {
+        "station": "KLAX"
+      }
+    },
+    {
+      "id": "get_sfo_obs",
+      "script": "get_observations.py",
+      "args": {
+        "station": "KSFO"
+      }
+    },
+    {
+      "id": "get_nyc_obs",
+      "script": "get_observations.py",
+      "args": {
+        "station": "KNYC"
+      }
+    },
+    {
+      "id": "aggregate_data",
+      "script": "aggregate_data_to_csv.py",
+      "depends_on": ["get_lax_obs", "get_sfo_obs", "get_nyc_obs"],
+      "args": {
+        "output": "weather_data.csv"
+      }
+    },
+    {
+      "id": "generate_synopsis",
+      "script": "generate_synopsis.py",
+      "depends_on": ["aggregate_data"],
+      "args": {
+        "input": "weather_data.csv",
+        "format": "fancy"
+      }
+    }
+  ]
+}
