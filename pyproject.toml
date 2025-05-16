@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "featherflow"
+version = "0.1.0"
+description = "Ultra-lightweight workflow orchestration tool built with Python's standard library"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "GNU GPL v3"}
+authors = [
+    {name = "Anthony Baum", email = "wxbaum@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wxbaum/featherflow"
+"Bug Tracker" = "https://github.com/wxbaum/featherflow/issues"
+
+[project.scripts]
+featherflow = "featherflow.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"featherflow" = ["templates/*.sh"]
