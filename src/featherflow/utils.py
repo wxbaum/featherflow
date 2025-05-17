@@ -66,11 +66,18 @@ def get_file_contents(file_path):
     Returns:
         str: Contents of the file, or None if the file doesn't exist
     """
+    logger = logging.getLogger(__name__)
+    
     if not os.path.exists(file_path):
+        logger.debug(f"File does not exist: {file_path}")
         return None
     
-    with open(file_path, "r") as f:
-        return f.read()
+    try:
+        with open(file_path, "r") as f:
+            return f.read()
+    except Exception as e:
+        logger.error(f"Failed to read file {file_path}: {str(e)}")
+        return None
 
 def write_file_contents(file_path, contents):
     """
@@ -83,6 +90,9 @@ def write_file_contents(file_path, contents):
     Returns:
         bool: True if successful, False otherwise
     """
+    # Add this line to define logger
+    logger = logging.getLogger(__name__)
+    
     try:
         # Create parent directory if needed
         parent_dir = os.path.dirname(file_path)
